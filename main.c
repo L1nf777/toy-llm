@@ -108,17 +108,37 @@ void softmax(float v[],int n)
     }
 }
 
+//交叉熵损失
+float cross_entropy(float probs[],int correct_id)
+{
+    return -logf(probs[correct_id]);
+}
+
+#define N 7
+char* data[] = {"a","ab","aba","abab","ababa","ababab","abababa"};
+char answer[] = {'b','a','b','a','b','a','b'};
+
+
+
 float wOut[d_v][V] = {{0.1f,-0.3f},{0.4f,0.2f},{-0.5f,0.1f}};
 
 
 int main()
 {
-    char input[1 + max_input_length] = "baa";
-    int length = 3;
+    char input[1 + max_input_length];
     float x[max_input_length][dim];
-    while(length < max_input_length)
+    float total = 0.0f;
+    for(int n = 0; n < N; n++)
     {
-        length = search(input,x);
+        int t = 0;
+        while(data[n][t] != '\0')
+        {
+            input[t] = data[n][t];
+            t++;
+        }
+        input[t] = '\0';
+        
+        int length = search(input,x);
 
         if(length <= 0)
         return 1;
@@ -158,12 +178,18 @@ int main()
         float logits[V];
         linear(d_v,V,out[length - 1],wOut,logits);
         softmax(logits,V);
-        printf("a: %.2f  b: %.2f\n",logits[0], logits[1]);
-        char next = logits[0] > logits[1] ? 'a' : 'b';
-        input[length] = next;
-        length++;
-        input[length] = '\0';
-        printf("%s\n",input);
+        
+
+        float loss = cross_entropy(logits,token_to_id(answer[n]));
+        total += loss;
+
+        printf("a: %.2f  b: %.2f  right: %c  loss: %.3f\n"
+                ,logits[0], logits[1],answer[n],loss);
+        // char next = logits[0] > logits[1] ? 'a' : 'b';
+        // input[length] = next;
+        // length++;
+        // input[length] = '\0';
+        // printf("%s\n",input);
     }
 
     // printf("attention: \n");
@@ -184,5 +210,7 @@ int main()
     //     }
     //     printf("\n");
     // }
+
+    printf("average loss = %.3f\n",total/N);
     return 0;
 }
